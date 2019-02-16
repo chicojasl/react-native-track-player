@@ -185,6 +185,10 @@ public class MusicManager implements OnAudioFocusChangeListener {
         metadata.updatePlayback(playback);
     }
 
+    public void updateMetadata(Track track) {
+        metadata.updateMetadata(track);
+    }
+
     public void onTrackUpdate(Track previous, long prevPos, Track next) {
         Log.d(Utils.LOG, "onTrackUpdate");
 
