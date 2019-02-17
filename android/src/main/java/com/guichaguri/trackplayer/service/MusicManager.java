@@ -224,6 +224,10 @@ public class MusicManager implements OnAudioFocusChangeListener {
         service.emit(MusicEvents.PLAYBACK_ERROR, bundle);
     }
 
+    public void onMetadataUpdate(Bundle metadata) {
+        service.emit(MusicEvents.PLAYBACK_METADATA, metadata);
+    }
+
     @Override
     public void onAudioFocusChange(int focus) {
         Log.d(Utils.LOG, "onDuck");

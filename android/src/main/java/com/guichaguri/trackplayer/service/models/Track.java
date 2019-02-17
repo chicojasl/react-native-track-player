@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.RatingCompat;
+import com.facebook.react.modules.network.OkHttpClientProvider;
 import android.support.v4.media.session.MediaSessionCompat.QueueItem;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
@@ -16,6 +17,8 @@ import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
 import com.google.android.exoplayer2.upstream.*;
+import com.guichaguri.trackplayer.service.metadata.IcyEvents;
+import com.guichaguri.trackplayer.service.MusicManager;
 import com.google.android.exoplayer2.util.Util;
 import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.player.LocalPlayback;
@@ -144,7 +147,7 @@ public class Track {
         return new QueueItem(descr, queueId);
     }
 
-    public MediaSource toMediaSource(Context ctx, LocalPlayback playback) {
+    public MediaSource toMediaSource(Context ctx, LocalPlayback playback, MusicManager manager) {
         // Updates the user agent if not set
         if(userAgent == null || userAgent.isEmpty())
             userAgent = Util.getUserAgent(ctx, "react-native-track-player");
@@ -171,6 +174,15 @@ public class Track {
 
             // Creates a local source factory
             ds = new DefaultDataSourceFactory(ctx, userAgent);
+
+        } else if(type == TrackType.ICY) {
+
+            // Creates a data source that intercepts icy metadata
+            IcyEvents listener = new IcyEvents(manager, userAgent);
+
+            ds = new DefaultDataSourceFactory(ctx, null, listener.getIcyDataSource());
+
+            ds = playback.enableCaching(ds);
 
         } else {
 
