@@ -21,7 +21,10 @@ declare namespace RNTrackPlayer {
     | "remote-jump-backward"
     | "remote-seek"
     | "remote-set-rating"
-    | "remote-duck";
+    | "remote-duck"
+    | "remote-like"
+    | "remote-dislike"
+    | "remote-bookmark";
 
   export type TrackType =
     | "default"
@@ -45,12 +48,7 @@ declare namespace RNTrackPlayer {
   type EmitterSubscription = { remove: () => void; };
   export function addEventListener(type: EventType, listener: (data: any) => void): EmitterSubscription;
 
-  export interface Track {
-    id: string;
-    url: string | ResourceObject;
-    type?: TrackType;
-    userAgent?: string;
-    contentType?: string;
+  export interface TrackMetadata {
     duration?: number;
     title: string;
     artist: string;
@@ -60,6 +58,14 @@ declare namespace RNTrackPlayer {
     date?: string;
     rating?: number | boolean;
     artwork?: string | ResourceObject;
+  }
+
+  export interface Track extends TrackMetadata {
+    id: string;
+    url: string | ResourceObject;
+    type?: TrackType;
+    userAgent?: string;
+    contentType?: string;
     pitchAlgorithm?: PitchAlgorithm;
     [key: string]: any;
   }
@@ -69,11 +75,26 @@ declare namespace RNTrackPlayer {
     maxBuffer?: number;
     playBuffer?: number;
     maxCacheSize?: number;
+    iosCategory?: 'playback' | 'playAndRecord' | 'multiRoute' | 'ambient' | 'soloAmbient' | 'record';
+    iosCategoryMode?: 'default' | 'gameChat' | 'measurement' | 'moviePlayback' | 'spokenAudio' | 'videoChat' | 'videoRecording' | 'voiceChat' | 'voicePrompt';
+    iosCategoryOptions?: Array<'mixWithOthers' | 'duckOthers' | 'interruptSpokenAudioAndMixWithOthers' | 'allowBluetooth' | 'allowBluetoothA2DP' | 'allowAirPlay' | 'defaultToSpeaker'>;
+    waitForBuffer?: boolean;
+  }
+
+  interface FeedbackOptions {
+    /** Marks wether the option should be marked as active or "done" */
+    isActive: boolean
+
+    /** The title to give the action (relevant for iOS) */
+    title: string
   }
 
   export interface MetadataOptions {
     ratingType?: RatingType;
     jumpInterval?: number;
+    likeOptions?: FeedbackOptions;
+    dislikeOptions?: FeedbackOptions;
+    bookmarkOptions?: FeedbackOptions;
     stopWithApp?: boolean;
 
     capabilities?: Capability[];
@@ -95,7 +116,6 @@ declare namespace RNTrackPlayer {
 
   export function setupPlayer(options?: PlayerOptions): Promise<void>;
   export function destroy(): void;
-  export function updateOptions(options: MetadataOptions): void;
 
   // Player Queue Commands
 
@@ -106,6 +126,10 @@ declare namespace RNTrackPlayer {
   export function skipToPrevious(): Promise<void>;
   export function removeUpcomingTracks(): Promise<void>;
   export function updateMetadata(track: Track): void;
+
+  // Control Center / Notification Metadata Commands
+  export function updateOptions(options: MetadataOptions): void;
+  export function updateMetadataForTrack(id: string, metadata: TrackMetadata) : Promise<void>;
 
   // Player Playback Commands
 
@@ -149,7 +173,8 @@ declare namespace RNTrackPlayer {
   export const STATE_PAUSED: State;
   export const STATE_STOPPED: State;
   export const STATE_BUFFERING: State;
-  
+  export const STATE_READY: State;
+
   export const RATING_HEART: RatingType;
   export const RATING_THUMBS_UP_DOWN: RatingType;
   export const RATING_3_STARS: RatingType;
@@ -169,6 +194,9 @@ declare namespace RNTrackPlayer {
   export const CAPABILITY_SET_RATING: Capability;
   export const CAPABILITY_JUMP_FORWARD: Capability;
   export const CAPABILITY_JUMP_BACKWARD: Capability;
+  export const CAPABILITY_LIKE: Capability;
+  export const CAPABILITY_DISLIKE: Capability;
+  export const CAPABILITY_BOOKMARK: Capability;
 
   export const PITCH_ALGORITHM_LINEAR: PitchAlgorithm;
   export const PITCH_ALGORITHM_MUSIC: PitchAlgorithm;
