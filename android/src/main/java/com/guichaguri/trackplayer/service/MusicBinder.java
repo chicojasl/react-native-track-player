@@ -4,7 +4,6 @@ import android.os.Binder;
 import android.os.Bundle;
 import com.facebook.react.bridge.Promise;
 import com.guichaguri.trackplayer.service.player.ExoPlayback;
-import com.guichaguri.trackplayer.service.models.Track;
 
 /**
  * @author Guichaguri
@@ -21,10 +20,6 @@ public class MusicBinder extends Binder {
 
     public void post(Runnable r) {
         service.handler.post(r);
-    }
-
-    public MusicManager getManager() {
-        return manager;
     }
 
     public ExoPlayback getPlayback() {
@@ -46,15 +41,12 @@ public class MusicBinder extends Binder {
 
     public void updateOptions(Bundle bundle) {
         manager.setStopWithApp(bundle.getBoolean("stopWithApp", false));
+        manager.setAlwaysPauseOnInterruption(bundle.getBoolean("alwaysPauseOnInterruption", false));
         manager.getMetadata().updateOptions(bundle);
     }
 
     public int getRatingType() {
         return manager.getMetadata().getRatingType();
-    }
-
-    public void updateMetadata(Track track) {
-        manager.updateMetadata(track);
     }
 
     public void destroy() {

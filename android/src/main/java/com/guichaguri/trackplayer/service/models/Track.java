@@ -6,26 +6,25 @@ import android.os.Bundle;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.RatingCompat;
-import com.facebook.react.modules.network.OkHttpClientProvider;
 import android.support.v4.media.session.MediaSessionCompat.QueueItem;
-import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
 import com.google.android.exoplayer2.upstream.*;
-import com.guichaguri.trackplayer.service.metadata.IcyEvents;
-import com.guichaguri.trackplayer.service.MusicManager;
 import com.google.android.exoplayer2.util.Util;
 import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.player.LocalPlayback;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static android.support.v4.media.MediaMetadataCompat.*;
 
@@ -69,6 +68,8 @@ public class Track {
 
     public RatingCompat rating;
 
+    public Map<String, String> headers;
+
     public final long queueId;
 
     public Track(Context context, Bundle bundle, int ratingType) {
@@ -93,6 +94,22 @@ public class Track {
 
         contentType = bundle.getString("contentType");
         userAgent = bundle.getString("userAgent");
+
+        Bundle httpHeaders = bundle.getBundle("headers");
+        if(httpHeaders != null) {
+            headers = new HashMap<>();
+            for(String header : httpHeaders.keySet()) {
+                headers.put(header, httpHeaders.getString(header));
+            }
+        }
+
+        setMetadata(context, bundle, ratingType);
+
+        queueId = System.currentTimeMillis();
+        originalItem = bundle;
+    }
+
+    public void setMetadata(Context context, Bundle bundle, int ratingType) {
         artwork = Utils.getUri(context, bundle, "artwork");
 
         title = bundle.getString("title");
@@ -104,8 +121,8 @@ public class Track {
 
         rating = Utils.getRating(bundle, "rating", ratingType);
 
-        queueId = System.currentTimeMillis();
-        originalItem = bundle;
+        if (originalItem != null && originalItem != bundle)
+            originalItem.putAll(bundle);
     }
 
     public MediaMetadataCompat.Builder toMediaMetadata() {
@@ -116,14 +133,13 @@ public class Track {
         builder.putString(METADATA_KEY_ALBUM, album);
         builder.putString(METADATA_KEY_DATE, date);
         builder.putString(METADATA_KEY_GENRE, genre);
+        builder.putString(METADATA_KEY_MEDIA_URI, uri.toString());
         builder.putString(METADATA_KEY_MEDIA_ID, id);
 
-        builder.putLong(METADATA_KEY_DURATION, duration);
-
-        if (uri != null) {
-            builder.putString(METADATA_KEY_MEDIA_URI, uri.toString());
+        if (duration > 0) {
+            builder.putLong(METADATA_KEY_DURATION, duration);
         }
-        
+
         if (artwork != null) {
             builder.putString(METADATA_KEY_ART_URI, artwork.toString());
         }
@@ -147,7 +163,7 @@ public class Track {
         return new QueueItem(descr, queueId);
     }
 
-    public MediaSource toMediaSource(Context ctx, LocalPlayback playback, MusicManager manager) {
+    public MediaSource toMediaSource(Context ctx, LocalPlayback playback) {
         // Updates the user agent if not set
         if(userAgent == null || userAgent.isEmpty())
             userAgent = Util.getUserAgent(ctx, "react-native-track-player");
@@ -175,26 +191,21 @@ public class Track {
             // Creates a local source factory
             ds = new DefaultDataSourceFactory(ctx, userAgent);
 
-        } else if(type == TrackType.ICY) {
-
-            // Creates a data source that intercepts icy metadata
-            IcyEvents listener = new IcyEvents(manager, userAgent);
-
-            ds = new DefaultDataSourceFactory(ctx, null, listener.getIcyDataSource());
-
-            ds = playback.enableCaching(ds);
-
         } else {
 
             // Creates a default http source factory, enabling cross protocol redirects
-            ds = new DefaultHttpDataSourceFactory(
+            DefaultHttpDataSourceFactory factory = new DefaultHttpDataSourceFactory(
                     userAgent, null,
                     DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
                     DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
                     true
             );
 
-            ds = playback.enableCaching(ds);
+            if(headers != null) {
+                factory.getDefaultRequestProperties().set(headers);
+            }
+
+            ds = playback.enableCaching(factory);
 
         }
 
@@ -209,8 +220,8 @@ public class Track {
                 return new SsMediaSource.Factory(new DefaultSsChunkSource.Factory(ds), ds)
                         .createMediaSource(uri);
             default:
-                return new ExtractorMediaSource.Factory(ds)
-                        .setExtractorsFactory(new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true))
+                return new ProgressiveMediaSource.Factory(ds, new DefaultExtractorsFactory()
+                        .setConstantBitrateSeekingEnabled(true))
                         .createMediaSource(uri);
         }
     }

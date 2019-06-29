@@ -20,7 +20,6 @@ if(file.exists()) {
     dash = json.dash ?: dash
     hls = json.hls ?: hls
     smoothstreaming = json.smoothstreaming ?: smoothstreaming
-    icy = json.icy ?: icy
 }
 
 def safeExtGet(prop, fallback) {
@@ -65,35 +64,30 @@ dependencies {
     //noinspection GradleDynamicVersion
     implementation 'com.facebook.react:react-native:+'
 
+    def exoPlayerVersion = safeExtGet("exoPlayerVersion", '2.10.1');
+
     // ExoPlayer Core
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.9.2'
+    implementation "com.google.android.exoplayer:exoplayer-core:${exoPlayerVersion}"
 
     // ExoPlayer DASH
     if (dash) {
-        implementation 'com.google.android.exoplayer:exoplayer-dash:2.9.2'
+        implementation "com.google.android.exoplayer:exoplayer-dash:${exoPlayerVersion}"
     } else {
-        compileOnly 'com.google.android.exoplayer:exoplayer-dash:2.9.2'
+        compileOnly "com.google.android.exoplayer:exoplayer-dash:${exoPlayerVersion}"
     }
 
     // ExoPlayer HLS
     if (hls) {
-        implementation 'com.google.android.exoplayer:exoplayer-hls:2.9.2'
+        implementation "com.google.android.exoplayer:exoplayer-hls:${exoPlayerVersion}"
     } else {
-        compileOnly 'com.google.android.exoplayer:exoplayer-hls:2.9.2'
+        compileOnly "com.google.android.exoplayer:exoplayer-hls:${exoPlayerVersion}"
     }
 
     // ExoPlayer SmoothStreaming
     if (smoothstreaming) {
-        implementation 'com.google.android.exoplayer:exoplayer-smoothstreaming:2.9.2'
+        implementation "com.google.android.exoplayer:exoplayer-smoothstreaming:${exoPlayerVersion}"
     } else {
-        compileOnly 'com.google.android.exoplayer:exoplayer-smoothstreaming:2.9.2'
-    }
-
-    // ExoPlayer Icy Extension
-    if (icy) {
-        implementation 'saschpe.android:exoplayer2-ext-icy:2.1.0'
-    } else {
-        compileOnly 'saschpe.android:exoplayer2-ext-icy:2.1.0'
+        compileOnly "com.google.android.exoplayer:exoplayer-smoothstreaming:${exoPlayerVersion}"
     }
 
     // Make sure we're using at least the support library 27.1.1

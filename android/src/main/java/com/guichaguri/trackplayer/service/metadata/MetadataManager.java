@@ -1,5 +1,6 @@
 package com.guichaguri.trackplayer.service.metadata;
 
+import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -34,6 +35,7 @@ import java.util.List;
 /**
  * @author Guichaguri
  */
+@SuppressLint("RestrictedApi")
 public class MetadataManager {
 
     private final MusicService service;
@@ -65,8 +67,7 @@ public class MetadataManager {
         this.builder = new NotificationCompat.Builder(service, Utils.NOTIFICATION_CHANNEL);
         this.session = new MediaSessionCompat(service, "TrackPlayer", null, null);
 
-        session.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
-                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        session.setFlags(MediaSessionCompat.FLAG_HANDLES_QUEUE_COMMANDS);
         session.setCallback(new ButtonEvents(service, manager));
 
         Context context = service.getApplicationContext();
@@ -325,6 +326,7 @@ public class MetadataManager {
         return new Action(icon, title, MediaButtonReceiver.buildMediaButtonPendingIntent(service, action));
     }
 
+    @SuppressLint("RestrictedApi")
     private void addAction(Action action, long id, List<Integer> compact) {
         if(action == null) return;
 
@@ -333,3 +335,4 @@ public class MetadataManager {
     }
 
 }
+
